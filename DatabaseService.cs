@@ -44,6 +44,6 @@ namespace MauiApplication
         {
             return _database.UpdateAsync(etudiant);
         }
-
+        
     }
 }

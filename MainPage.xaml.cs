@@ -6,9 +6,12 @@ namespace MauiApplication
 {
     public partial class MainPage : ContentPage
     {
+        private readonly DatabaseService _databaseService;
+
         public MainPage()
         {
             InitializeComponent();
+            _databaseService = new DatabaseService(); // Initialiser le service de base de données
             BuildUI();
         }
 
@@ -82,10 +85,19 @@ namespace MauiApplication
             var parentEntry = new Entry { Placeholder = "Numéro du Parent" };
 
             var saveButton = new Button { Text = "Enregistrer" };
-            saveButton.Clicked += (s, args) =>
+            saveButton.Clicked += async (s, args) =>
             {
-                DisplayAlert("Succès", $"Étudiant {nomEntry.Text} {prenomEntry.Text} ajouté avec succès", "OK");
-                DisplayEtudiantsMenu(null, null);
+                var etudiant = new Etudiant
+                {
+                    Nom = nomEntry.Text,
+                    Prenom = prenomEntry.Text,
+                    NiveauScolaire = niveauEntry.Text,
+                    NumeroParent = parentEntry.Text
+                };
+
+                await _databaseService.AjouterEtudiant(etudiant); // Enregistrer dans la base de données
+                await DisplayAlert("Succès", "Étudiant ajouté avec succès", "OK");
+                DisplayEtudiantsMenu(null, null); // Retour au menu Étudiants
             };
 
             var retourButton = new Button { Text = "Retour" };
@@ -99,12 +111,31 @@ namespace MauiApplication
         }
 
 
-
-        private void ListeEtudiants()
+        private async void ListeEtudiants()
         {
-            var etudiants = new List<string> { "Alice Durand", "Paul Morel" }; // Exemple de liste statique
+            var etudiants = await _databaseService.ObtenirEtudiants(); // Récupérer les étudiants depuis la base
 
-            var listView = new ListView { ItemsSource = etudiants };
+            var listView = new ListView
+            {
+                ItemsSource = etudiants,
+                ItemTemplate = new DataTemplate(() =>
+                {
+                    var nomLabel = new Label();
+                    nomLabel.SetBinding(Label.TextProperty, "Nom");
+
+                    var prenomLabel = new Label();
+                    prenomLabel.SetBinding(Label.TextProperty, "Prenom");
+
+                    return new ViewCell
+                    {
+                        View = new StackLayout
+                        {
+                            Orientation = StackOrientation.Horizontal,
+                            Children = { nomLabel, prenomLabel }
+                        }
+                    };
+                })
+            };
 
             var retourButton = new Button { Text = "Retour" };
             retourButton.Clicked += (s, args) => DisplayEtudiantsMenu(null, null);
@@ -115,6 +146,7 @@ namespace MauiApplication
                 Children = { listView, retourButton }
             };
         }
+
 
 
 
