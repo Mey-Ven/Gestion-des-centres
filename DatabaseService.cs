@@ -13,6 +13,11 @@ namespace MauiApplication
         {
             // Définir le chemin de la base de données
             var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CentreCours.db");
+            if (File.Exists(dbPath))
+            {
+                File.Delete(dbPath); // Supprime l'ancienne base
+            }
+
             _database = new SQLiteAsyncConnection(dbPath);
 
             // Créer les tables pour chaque entité
@@ -21,6 +26,7 @@ namespace MauiApplication
             _database.CreateTableAsync<Salle>().Wait();
             _database.CreateTableAsync<Cours>().Wait();
         }
+
 
         // Méthodes pour Étudiants
         public Task<int> AjouterEtudiant(Etudiant etudiant)

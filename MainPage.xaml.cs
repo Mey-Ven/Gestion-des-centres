@@ -88,12 +88,12 @@ namespace MauiApplication
             sexePicker.Items.Add("Homme");
             sexePicker.Items.Add("Femme");
 
-            // Récupérer les cours disponibles
-            var coursDisponibles = await _databaseService.ObtenirCours(); // Méthode pour récupérer les cours
+            // Récupérer les cours disponibles depuis la base de données
+            var coursDisponibles = await _databaseService.ObtenirCours();
             var coursPicker = new Picker { Title = "Cours inscrits" };
             foreach (var cours in coursDisponibles)
             {
-                coursPicker.Items.Add(cours.Nom); // Ajouter les noms des cours dans la liste
+                coursPicker.Items.Add(cours.Nom); // Ajouter les noms des cours dans le picker
             }
 
             var saveButton = new Button { Text = "Enregistrer" };
@@ -115,9 +115,9 @@ namespace MauiApplication
                     CoursInscrits = new List<string> { coursPicker.SelectedItem.ToString() } // Ajouter le cours sélectionné
                 };
 
-                await _databaseService.AjouterEtudiant(etudiant); // Enregistrer dans la base de données
+                await _databaseService.AjouterEtudiant(etudiant); // Enregistrer l'étudiant dans la base de données
                 await DisplayAlert("Succès", "Étudiant ajouté avec succès", "OK");
-                DisplayEtudiantsMenu(null, null); // Retour au menu Étudiants
+                DisplayEtudiantsMenu(null, null); // Retour au menu des étudiants
             };
 
             var retourButton = new Button { Text = "Retour" };
@@ -138,6 +138,7 @@ namespace MauiApplication
         }
             };
         }
+
 
 
         private async Task ModifierEtudiant(Etudiant etudiant)
@@ -191,15 +192,26 @@ namespace MauiApplication
                 ItemsSource = etudiants,
                 ItemTemplate = new DataTemplate(() =>
                 {
-                    var nomLabel = new Label();
+                    // Affichage des informations d'un étudiant
+                    var nomLabel = new Label { FontAttributes = FontAttributes.Bold };
                     nomLabel.SetBinding(Label.TextProperty, "Nom");
+
+                    var prenomLabel = new Label();
+                    prenomLabel.SetBinding(Label.TextProperty, "Prenom");
+
+                    var niveauLabel = new Label();
+                    niveauLabel.SetBinding(Label.TextProperty, "NiveauScolaire");
+
+                    var numeroParentLabel = new Label();
+                    numeroParentLabel.SetBinding(Label.TextProperty, "NumeroParent");
 
                     var sexeLabel = new Label();
                     sexeLabel.SetBinding(Label.TextProperty, "Sexe");
 
-                    var coursLabel = new Label();
-                    coursLabel.SetBinding(Label.TextProperty, "CoursInscrits");
+                    var coursLabel = new Label { FontAttributes = FontAttributes.Italic };
+                    coursLabel.SetBinding(Label.TextProperty, "CoursInscritsSerialized");
 
+                    // Bouton Modifier
                     var modifierButton = new Button { Text = "Modifier" };
                     modifierButton.SetBinding(Button.CommandParameterProperty, ".");
                     modifierButton.Clicked += async (s, args) =>
@@ -208,6 +220,7 @@ namespace MauiApplication
                         await ModifierEtudiant(etudiantSelectionne); // Appeler la méthode de modification
                     };
 
+                    // Bouton Supprimer
                     var supprimerButton = new Button
                     {
                         Text = "Supprimer",
@@ -225,30 +238,42 @@ namespace MauiApplication
                     {
                         View = new StackLayout
                         {
-                            Orientation = StackOrientation.Vertical,
+                            Padding = 10,
                             Children = {
+                        new Label { Text = "Nom :", FontAttributes = FontAttributes.Bold },
+                        nomLabel,
+                        new Label { Text = "Prénom :", FontAttributes = FontAttributes.Bold },
+                        prenomLabel,
+                        new Label { Text = "Niveau scolaire :", FontAttributes = FontAttributes.Bold },
+                        niveauLabel,
+                        new Label { Text = "Numéro du parent :", FontAttributes = FontAttributes.Bold },
+                        numeroParentLabel,
+                        new Label { Text = "Sexe :", FontAttributes = FontAttributes.Bold },
+                        sexeLabel,
+                        new Label { Text = "Cours inscrits :", FontAttributes = FontAttributes.Bold },
+                        coursLabel,
                         new StackLayout
                         {
                             Orientation = StackOrientation.Horizontal,
-                            Children = { nomLabel, sexeLabel, modifierButton, supprimerButton }
-                        },
-                        coursLabel
+                            Children = { modifierButton, supprimerButton }
+                        }
                     }
                         }
                     };
                 })
             };
 
+            // Bouton Retour
             var retourButton = new Button { Text = "Retour" };
             retourButton.Clicked += (s, args) => DisplayEtudiantsMenu(null, null);
 
+            // Ajouter la ListView et le bouton Retour dans la page
             Content = new StackLayout
             {
                 Padding = 20,
                 Children = { listView, retourButton }
             };
         }
-
 
         private void DisplayEnseignantsMenu(object sender, EventArgs e)
         {
@@ -268,32 +293,42 @@ namespace MauiApplication
             };
         }
 
-
-        private void AjouterEnseignant()
+        private async void AjouterEnseignant()
         {
             var nomEntry = new Entry { Placeholder = "Nom" };
             var prenomEntry = new Entry { Placeholder = "Prénom" };
-            var matiereEntry = new Entry { Placeholder = "Matière enseignée" };
             var telephoneEntry = new Entry { Placeholder = "Téléphone" };
             var emailEntry = new Entry { Placeholder = "Email" };
-            var prixEntry = new Entry { Placeholder = "Prix par cours", Keyboard = Keyboard.Numeric };
+
+            // Récupérer les cours disponibles
+            var coursDisponibles = await _databaseService.ObtenirCours(); // Méthode pour récupérer les cours
+            var coursPicker = new Picker { Title = "Cours enseignés" };
+            foreach (var cours in coursDisponibles)
+            {
+                coursPicker.Items.Add(cours.Nom); // Ajouter les noms des cours dans la liste
+            }
 
             var saveButton = new Button { Text = "Enregistrer" };
             saveButton.Clicked += async (s, args) =>
             {
+                if (coursPicker.SelectedIndex == -1)
+                {
+                    await DisplayAlert("Erreur", "Veuillez sélectionner au moins un cours", "OK");
+                    return;
+                }
+
                 var enseignant = new Professeur
                 {
                     Nom = nomEntry.Text,
                     Prenom = prenomEntry.Text,
-                    Matiere = matiereEntry.Text,
                     Telephone = telephoneEntry.Text,
                     Email = emailEntry.Text,
-                    PrixCours = decimal.TryParse(prixEntry.Text, out var prix) ? prix : 0
+                    CoursEnseignes = new List<string> { coursPicker.SelectedItem.ToString() } // Ajouter le cours sélectionné
                 };
 
-                await _databaseService.AjouterProfesseur(enseignant); // Utilise AjouterProfesseur pour ajouter un enseignant
+                await _databaseService.AjouterProfesseur(enseignant); // Enregistrer dans la base de données
                 await DisplayAlert("Succès", "Enseignant ajouté avec succès", "OK");
-                DisplayEnseignantsMenu(null, null); // Retour au menu Enseignants
+                DisplayEnseignantsMenu(null, null); // Retour au menu des enseignants
             };
 
             var retourButton = new Button { Text = "Retour" };
@@ -302,31 +337,58 @@ namespace MauiApplication
             Content = new StackLayout
             {
                 Padding = 20,
-                Children = { nomEntry, prenomEntry, matiereEntry, telephoneEntry, emailEntry, prixEntry, saveButton, retourButton }
+                Children = {
+            nomEntry,
+            prenomEntry,
+            telephoneEntry,
+            emailEntry,
+            coursPicker,
+            saveButton,
+            retourButton
+        }
             };
         }
-
         private async Task ModifierEnseignant(Professeur enseignant)
         {
-            var nomEntry = new Entry { Text = enseignant.Nom }; // Champ pré-rempli
-            var prenomEntry = new Entry { Text = enseignant.Prenom };
-            var matiereEntry = new Entry { Text = enseignant.Matiere };
-            var telephoneEntry = new Entry { Text = enseignant.Telephone };
-            var emailEntry = new Entry { Text = enseignant.Email };
-            var prixEntry = new Entry { Text = enseignant.PrixCours.ToString(), Keyboard = Keyboard.Numeric };
+            var nomEntry = new Entry { Text = enseignant.Nom, Placeholder = "Nom" };
+            var prenomEntry = new Entry { Text = enseignant.Prenom, Placeholder = "Prénom" };
+            var telephoneEntry = new Entry { Text = enseignant.Telephone, Placeholder = "Téléphone" };
+            var emailEntry = new Entry { Text = enseignant.Email, Placeholder = "Email" };
+
+            // Récupérer les cours disponibles
+            var coursDisponibles = await _databaseService.ObtenirCours();
+            var coursPicker = new Picker { Title = "Cours enseignés" };
+            foreach (var cours in coursDisponibles)
+            {
+                coursPicker.Items.Add(cours.Nom);
+            }
+
+            // Pré-sélectionner un cours s'il existe
+            if (enseignant.CoursEnseignes.Count > 0)
+            {
+                var index = coursDisponibles.FindIndex(c => c.Nom == enseignant.CoursEnseignes[0]);
+                if (index >= 0)
+                {
+                    coursPicker.SelectedIndex = index;
+                }
+            }
 
             var saveButton = new Button { Text = "Enregistrer" };
             saveButton.Clicked += async (s, args) =>
             {
-                // Mettre à jour les informations de l'enseignant
+                if (coursPicker.SelectedIndex == -1)
+                {
+                    await DisplayAlert("Erreur", "Veuillez sélectionner au moins un cours", "OK");
+                    return;
+                }
+
                 enseignant.Nom = nomEntry.Text;
                 enseignant.Prenom = prenomEntry.Text;
-                enseignant.Matiere = matiereEntry.Text;
                 enseignant.Telephone = telephoneEntry.Text;
                 enseignant.Email = emailEntry.Text;
-                enseignant.PrixCours = decimal.TryParse(prixEntry.Text, out var prix) ? prix : 0;
+                enseignant.CoursEnseignes = new List<string> { coursPicker.SelectedItem.ToString() };
 
-                await _databaseService.ModifierProfesseur(enseignant); // Mise à jour dans la base de données
+                await _databaseService.ModifierProfesseur(enseignant);
                 await DisplayAlert("Succès", "Enseignant modifié avec succès", "OK");
                 ListeEnseignants(); // Retour à la liste des enseignants
             };
@@ -337,9 +399,18 @@ namespace MauiApplication
             Content = new StackLayout
             {
                 Padding = 20,
-                Children = { nomEntry, prenomEntry, matiereEntry, telephoneEntry, emailEntry, prixEntry, saveButton, retourButton }
+                Children = {
+            nomEntry,
+            prenomEntry,
+            telephoneEntry,
+            emailEntry,
+            coursPicker,
+            saveButton,
+            retourButton
+        }
             };
         }
+
 
         private async Task SupprimerEnseignant(Professeur enseignant)
         {
@@ -351,7 +422,6 @@ namespace MauiApplication
                 ListeEnseignants(); // Retour à la liste des enseignants
             }
         }
-
         private async void ListeEnseignants()
         {
             var enseignants = await _databaseService.ObtenirProfesseurs(); // Récupérer les enseignants depuis la base
@@ -367,6 +437,15 @@ namespace MauiApplication
                     var prenomLabel = new Label();
                     prenomLabel.SetBinding(Label.TextProperty, "Prenom");
 
+                    var telephoneLabel = new Label();
+                    telephoneLabel.SetBinding(Label.TextProperty, "Telephone");
+
+                    var emailLabel = new Label();
+                    emailLabel.SetBinding(Label.TextProperty, "Email");
+
+                    var coursLabel = new Label { FontAttributes = FontAttributes.Italic };
+                    coursLabel.SetBinding(Label.TextProperty, "CoursEnseignesSerialized"); // Affiche les cours enseignés
+
                     var modifierButton = new Button { Text = "Modifier" };
                     modifierButton.SetBinding(Button.CommandParameterProperty, ".");
                     modifierButton.Clicked += async (s, args) =>
@@ -378,8 +457,8 @@ namespace MauiApplication
                     var supprimerButton = new Button
                     {
                         Text = "Supprimer",
-                        BackgroundColor = Colors.Red, // Couleur de fond rouge
-                        TextColor = Colors.White // Texte blanc
+                        BackgroundColor = Colors.Red,
+                        TextColor = Colors.White
                     };
                     supprimerButton.SetBinding(Button.CommandParameterProperty, ".");
                     supprimerButton.Clicked += async (s, args) =>
@@ -392,8 +471,19 @@ namespace MauiApplication
                     {
                         View = new StackLayout
                         {
+                            Padding = 10,
+                            Children = {
+                        new Label { Text = "Nom :", FontAttributes = FontAttributes.Bold }, nomLabel,
+                        new Label { Text = "Prénom :", FontAttributes = FontAttributes.Bold }, prenomLabel,
+                        new Label { Text = "Téléphone :", FontAttributes = FontAttributes.Bold }, telephoneLabel,
+                        new Label { Text = "Email :", FontAttributes = FontAttributes.Bold }, emailLabel,
+                        new Label { Text = "Cours enseignés :", FontAttributes = FontAttributes.Bold }, coursLabel,
+                        new StackLayout
+                        {
                             Orientation = StackOrientation.Horizontal,
-                            Children = { nomLabel, prenomLabel, modifierButton, supprimerButton }
+                            Children = { modifierButton, supprimerButton }
+                        }
+                    }
                         }
                     };
                 })
@@ -564,31 +654,40 @@ namespace MauiApplication
                 Children = { ajouterButton, listeButton, retourButton }
             };
         }
-
-
-        private void AjouterCours()
+        private async void AjouterCours()
         {
             var nomEntry = new Entry { Placeholder = "Nom du cours" };
             var horairesEntry = new Entry { Placeholder = "Horaires du cours" };
-            var salleEntry = new Entry { Placeholder = "Salle" };
-            var enseignantsEntry = new Entry { Placeholder = "Enseignants (séparés par des virgules)" };
             var prixEntry = new Entry { Placeholder = "Prix", Keyboard = Keyboard.Numeric };
+
+            // Récupérer les salles disponibles
+            var sallesDisponibles = await _databaseService.ObtenirSalles(); // Méthode pour récupérer les salles
+            var sallePicker = new Picker { Title = "Sélectionnez une salle" };
+            foreach (var salle in sallesDisponibles)
+            {
+                sallePicker.Items.Add(salle.NumeroSalle); // Ajouter les numéros des salles dans le picker
+            }
 
             var saveButton = new Button { Text = "Enregistrer" };
             saveButton.Clicked += async (s, args) =>
             {
+                if (sallePicker.SelectedIndex == -1)
+                {
+                    await DisplayAlert("Erreur", "Veuillez sélectionner une salle", "OK");
+                    return;
+                }
+
                 var cours = new Cours
                 {
                     Nom = nomEntry.Text,
                     Horaires = horairesEntry.Text,
-                    Salle = salleEntry.Text,
-                    Enseignants = enseignantsEntry.Text,
+                    Salle = sallePicker.SelectedItem.ToString(), // Associe le numéro de salle choisi
                     Prix = decimal.TryParse(prixEntry.Text, out var prix) ? prix : 0
                 };
 
-                await _databaseService.AjouterCours(cours); // Méthode correcte pour les cours
+                await _databaseService.AjouterCours(cours); // Enregistrer le cours dans la base
                 await DisplayAlert("Succès", "Cours ajouté avec succès", "OK");
-                DisplayCoursMenu(null, null); // Retour au menu Cours
+                DisplayCoursMenu(null, null); // Retour au menu des cours
             };
 
             var retourButton = new Button { Text = "Retour" };
@@ -597,29 +696,53 @@ namespace MauiApplication
             Content = new StackLayout
             {
                 Padding = 20,
-                Children = { nomEntry, horairesEntry, salleEntry, enseignantsEntry, prixEntry, saveButton, retourButton }
+                Children = {
+            nomEntry,
+            horairesEntry,
+            sallePicker,
+            prixEntry,
+            saveButton,
+            retourButton
+        }
             };
         }
 
         private async Task ModifierCours(Cours cours)
         {
-            var nomEntry = new Entry { Text = cours.Nom }; // Champ pré-rempli
-            var horairesEntry = new Entry { Text = cours.Horaires };
-            var salleEntry = new Entry { Text = cours.Salle };
-            var enseignantsEntry = new Entry { Text = cours.Enseignants };
-            var prixEntry = new Entry { Text = cours.Prix.ToString(), Keyboard = Keyboard.Numeric };
+            var nomEntry = new Entry { Text = cours.Nom, Placeholder = "Nom du cours" };
+            var horairesEntry = new Entry { Text = cours.Horaires, Placeholder = "Horaires du cours" };
+            var prixEntry = new Entry { Text = cours.Prix.ToString(), Placeholder = "Prix", Keyboard = Keyboard.Numeric };
+
+            // Récupérer les salles disponibles
+            var sallesDisponibles = await _databaseService.ObtenirSalles();
+            var sallePicker = new Picker { Title = "Sélectionnez une salle" };
+            foreach (var salle in sallesDisponibles)
+            {
+                sallePicker.Items.Add(salle.NumeroSalle);
+            }
+
+            // Pré-sélectionner la salle actuelle du cours
+            var index = sallesDisponibles.FindIndex(s => s.NumeroSalle == cours.Salle);
+            if (index >= 0)
+            {
+                sallePicker.SelectedIndex = index;
+            }
 
             var saveButton = new Button { Text = "Enregistrer" };
             saveButton.Clicked += async (s, args) =>
             {
-                // Mettre à jour les informations du cours
+                if (sallePicker.SelectedIndex == -1)
+                {
+                    await DisplayAlert("Erreur", "Veuillez sélectionner une salle", "OK");
+                    return;
+                }
+
                 cours.Nom = nomEntry.Text;
                 cours.Horaires = horairesEntry.Text;
-                cours.Salle = salleEntry.Text;
-                cours.Enseignants = enseignantsEntry.Text;
+                cours.Salle = sallePicker.SelectedItem.ToString();
                 cours.Prix = decimal.TryParse(prixEntry.Text, out var prix) ? prix : 0;
 
-                await _databaseService.ModifierCours(cours); // Mise à jour dans la base de données
+                await _databaseService.ModifierCours(cours);
                 await DisplayAlert("Succès", "Cours modifié avec succès", "OK");
                 ListeCours(); // Retour à la liste des cours
             };
@@ -630,9 +753,18 @@ namespace MauiApplication
             Content = new StackLayout
             {
                 Padding = 20,
-                Children = { nomEntry, horairesEntry, salleEntry, enseignantsEntry, prixEntry, saveButton, retourButton }
+                Children = {
+            nomEntry,
+            horairesEntry,
+            sallePicker,
+            prixEntry,
+            saveButton,
+            retourButton
+        }
             };
         }
+
+
 
         private async Task SupprimerCours(Cours cours)
         {
@@ -647,11 +779,11 @@ namespace MauiApplication
 
         private async void ListeCours()
         {
-            var cours = await _databaseService.ObtenirCours(); // Récupérer les cours depuis la base
+            var coursList = await _databaseService.ObtenirCours();
 
             var listView = new ListView
             {
-                ItemsSource = cours,
+                ItemsSource = coursList,
                 ItemTemplate = new DataTemplate(() =>
                 {
                     var nomLabel = new Label();
@@ -660,33 +792,56 @@ namespace MauiApplication
                     var horairesLabel = new Label();
                     horairesLabel.SetBinding(Label.TextProperty, "Horaires");
 
+                    var salleLabel = new Label();
+                    salleLabel.SetBinding(Label.TextProperty, "Salle");
+
+                    var prixLabel = new Label();
+                    prixLabel.SetBinding(Label.TextProperty, "Prix");
+
                     var modifierButton = new Button { Text = "Modifier" };
                     modifierButton.SetBinding(Button.CommandParameterProperty, ".");
                     modifierButton.Clicked += async (s, args) =>
                     {
-                        var coursSelectionne = (Cours)((Button)s).CommandParameter; // Récupérer le cours
-                        await ModifierCours(coursSelectionne); // Appeler la méthode de modification
+                        var coursSelectionne = (Cours)((Button)s).CommandParameter;
+                        await ModifierCours(coursSelectionne); // Appeler la méthode ModifierCours
                     };
 
                     var supprimerButton = new Button
                     {
                         Text = "Supprimer",
-                        BackgroundColor = Colors.Red, // Couleur de fond rouge
-                        TextColor = Colors.White // Texte blanc
+                        BackgroundColor = Colors.Red,
+                        TextColor = Colors.White
                     };
                     supprimerButton.SetBinding(Button.CommandParameterProperty, ".");
                     supprimerButton.Clicked += async (s, args) =>
                     {
-                        var coursASupprimer = (Cours)((Button)s).CommandParameter; // Récupérer le cours
-                        await SupprimerCours(coursASupprimer); // Appeler la méthode de suppression
+                        var coursASupprimer = (Cours)((Button)s).CommandParameter;
+                        await _databaseService.SupprimerCours(coursASupprimer.Id);
+                        ListeCours(); // Rafraîchir la liste
                     };
 
                     return new ViewCell
                     {
                         View = new StackLayout
                         {
+                            Padding = 10,
+                            Children = {
+                        new StackLayout
+                        {
                             Orientation = StackOrientation.Horizontal,
-                            Children = { nomLabel, horairesLabel, modifierButton, supprimerButton }
+                            Children = {
+                                new Label { Text = "Nom :", FontAttributes = FontAttributes.Bold }, nomLabel,
+                                new Label { Text = "Salle :", FontAttributes = FontAttributes.Bold }, salleLabel
+                            }
+                        },
+                        new Label { Text = "Horaires :", FontAttributes = FontAttributes.Bold }, horairesLabel,
+                        new Label { Text = "Prix :", FontAttributes = FontAttributes.Bold }, prixLabel,
+                        new StackLayout
+                        {
+                            Orientation = StackOrientation.Horizontal,
+                            Children = { modifierButton, supprimerButton }
+                        }
+                    }
                         }
                     };
                 })
@@ -701,6 +856,7 @@ namespace MauiApplication
                 Children = { listView, retourButton }
             };
         }
+
 
 
     }
