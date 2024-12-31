@@ -76,23 +76,43 @@ namespace MauiApplication
             };
         }
 
-
-        private void AjouterEtudiant()
+        private async void AjouterEtudiant()
         {
             var nomEntry = new Entry { Placeholder = "Nom" };
             var prenomEntry = new Entry { Placeholder = "Prénom" };
             var niveauEntry = new Entry { Placeholder = "Niveau Scolaire" };
             var parentEntry = new Entry { Placeholder = "Numéro du Parent" };
 
+            // Champ pour sélectionner le sexe
+            var sexePicker = new Picker { Title = "Sexe" };
+            sexePicker.Items.Add("Homme");
+            sexePicker.Items.Add("Femme");
+
+            // Récupérer les cours disponibles
+            var coursDisponibles = await _databaseService.ObtenirCours(); // Méthode pour récupérer les cours
+            var coursPicker = new Picker { Title = "Cours inscrits" };
+            foreach (var cours in coursDisponibles)
+            {
+                coursPicker.Items.Add(cours.Nom); // Ajouter les noms des cours dans la liste
+            }
+
             var saveButton = new Button { Text = "Enregistrer" };
             saveButton.Clicked += async (s, args) =>
             {
+                if (sexePicker.SelectedIndex == -1 || coursPicker.SelectedIndex == -1)
+                {
+                    await DisplayAlert("Erreur", "Veuillez remplir tous les champs", "OK");
+                    return;
+                }
+
                 var etudiant = new Etudiant
                 {
                     Nom = nomEntry.Text,
                     Prenom = prenomEntry.Text,
                     NiveauScolaire = niveauEntry.Text,
-                    NumeroParent = parentEntry.Text
+                    NumeroParent = parentEntry.Text,
+                    Sexe = sexePicker.SelectedItem.ToString(),
+                    CoursInscrits = new List<string> { coursPicker.SelectedItem.ToString() } // Ajouter le cours sélectionné
                 };
 
                 await _databaseService.AjouterEtudiant(etudiant); // Enregistrer dans la base de données
@@ -106,9 +126,19 @@ namespace MauiApplication
             Content = new StackLayout
             {
                 Padding = 20,
-                Children = { nomEntry, prenomEntry, niveauEntry, parentEntry, saveButton, retourButton }
+                Children = {
+            nomEntry,
+            prenomEntry,
+            niveauEntry,
+            parentEntry,
+            sexePicker,
+            coursPicker,
+            saveButton,
+            retourButton
+        }
             };
         }
+
 
         private async Task ModifierEtudiant(Etudiant etudiant)
         {
@@ -152,7 +182,6 @@ namespace MauiApplication
             }
         }
 
-
         private async void ListeEtudiants()
         {
             var etudiants = await _databaseService.ObtenirEtudiants(); // Récupérer les étudiants depuis la base
@@ -165,8 +194,11 @@ namespace MauiApplication
                     var nomLabel = new Label();
                     nomLabel.SetBinding(Label.TextProperty, "Nom");
 
-                    var prenomLabel = new Label();
-                    prenomLabel.SetBinding(Label.TextProperty, "Prenom");
+                    var sexeLabel = new Label();
+                    sexeLabel.SetBinding(Label.TextProperty, "Sexe");
+
+                    var coursLabel = new Label();
+                    coursLabel.SetBinding(Label.TextProperty, "CoursInscrits");
 
                     var modifierButton = new Button { Text = "Modifier" };
                     modifierButton.SetBinding(Button.CommandParameterProperty, ".");
@@ -179,8 +211,8 @@ namespace MauiApplication
                     var supprimerButton = new Button
                     {
                         Text = "Supprimer",
-                        BackgroundColor = Colors.Red, // Couleur de fond rouge
-                        TextColor = Colors.White // Texte blanc
+                        BackgroundColor = Colors.Red,
+                        TextColor = Colors.White
                     };
                     supprimerButton.SetBinding(Button.CommandParameterProperty, ".");
                     supprimerButton.Clicked += async (s, args) =>
@@ -193,8 +225,15 @@ namespace MauiApplication
                     {
                         View = new StackLayout
                         {
+                            Orientation = StackOrientation.Vertical,
+                            Children = {
+                        new StackLayout
+                        {
                             Orientation = StackOrientation.Horizontal,
-                            Children = { nomLabel, prenomLabel, modifierButton, supprimerButton }
+                            Children = { nomLabel, sexeLabel, modifierButton, supprimerButton }
+                        },
+                        coursLabel
+                    }
                         }
                     };
                 })
