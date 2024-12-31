@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using MauiApplication;
-
 
 namespace MauiApplication
 {
@@ -17,14 +15,14 @@ namespace MauiApplication
             var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CentreCours.db");
             _database = new SQLiteAsyncConnection(dbPath);
 
-            // Créer les tables
+            // Créer les tables pour chaque entité
             _database.CreateTableAsync<Etudiant>().Wait();
             _database.CreateTableAsync<Professeur>().Wait();
             _database.CreateTableAsync<Salle>().Wait();
             _database.CreateTableAsync<Cours>().Wait();
         }
 
-        // Méthodes pour gérer les Étudiants
+        // Méthodes pour Étudiants
         public Task<int> AjouterEtudiant(Etudiant etudiant)
         {
             return _database.InsertAsync(etudiant);
@@ -45,6 +43,7 @@ namespace MauiApplication
             return _database.UpdateAsync(etudiant);
         }
 
+        // Méthodes pour Enseignants
         public Task<int> AjouterProfesseur(Professeur professeur)
         {
             return _database.InsertAsync(professeur);
@@ -65,6 +64,7 @@ namespace MauiApplication
             return _database.UpdateAsync(professeur);
         }
 
+        // Méthodes pour Salles
         public Task<int> AjouterSalle(Salle salle)
         {
             return _database.InsertAsync(salle);
@@ -85,6 +85,7 @@ namespace MauiApplication
             return _database.UpdateAsync(salle);
         }
 
+        // Méthodes pour Cours
         public Task<int> AjouterCours(Cours cours)
         {
             return _database.InsertAsync(cours);
@@ -104,7 +105,5 @@ namespace MauiApplication
         {
             return _database.UpdateAsync(cours);
         }
-
-
     }
 }
