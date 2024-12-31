@@ -175,16 +175,26 @@ namespace MauiApplication
             var nomEntry = new Entry { Placeholder = "Nom" };
             var prenomEntry = new Entry { Placeholder = "Prénom" };
             var matiereEntry = new Entry { Placeholder = "Matière enseignée" };
-            var classesEntry = new Entry { Placeholder = "Classes où il enseigne" };
-            var telephoneEntry = new Entry { Placeholder = "Numéro de téléphone" };
+            var telephoneEntry = new Entry { Placeholder = "Téléphone" };
             var emailEntry = new Entry { Placeholder = "Email" };
             var prixEntry = new Entry { Placeholder = "Prix par cours", Keyboard = Keyboard.Numeric };
 
             var saveButton = new Button { Text = "Enregistrer" };
-            saveButton.Clicked += (s, args) =>
+            saveButton.Clicked += async (s, args) =>
             {
-                DisplayAlert("Succès", $"Enseignant {nomEntry.Text} {prenomEntry.Text} ajouté avec succès", "OK");
-                DisplayEnseignantsMenu(null, null);
+                var enseignant = new Professeur
+                {
+                    Nom = nomEntry.Text,
+                    Prenom = prenomEntry.Text,
+                    Matiere = matiereEntry.Text,
+                    Telephone = telephoneEntry.Text,
+                    Email = emailEntry.Text,
+                    PrixCours = decimal.TryParse(prixEntry.Text, out var prix) ? prix : 0
+                };
+
+                await _databaseService.AjouterProfesseur(enseignant); // Utilise AjouterProfesseur pour ajouter un enseignant
+                await DisplayAlert("Succès", "Enseignant ajouté avec succès", "OK");
+                DisplayEnseignantsMenu(null, null); // Retour au menu Enseignants
             };
 
             var retourButton = new Button { Text = "Retour" };
@@ -193,16 +203,36 @@ namespace MauiApplication
             Content = new StackLayout
             {
                 Padding = 20,
-                Children = { nomEntry, prenomEntry, matiereEntry, classesEntry, telephoneEntry, emailEntry, prixEntry, saveButton, retourButton }
+                Children = { nomEntry, prenomEntry, matiereEntry, telephoneEntry, emailEntry, prixEntry, saveButton, retourButton }
             };
         }
 
 
-        private void ListeEnseignants()
+        private async void ListeEnseignants()
         {
-            var enseignants = new List<string> { "Jean Dupont (Maths)", "Luc Martin (Physique)" }; // Exemple de liste statique
+            var enseignants = await _databaseService.ObtenirProfesseurs(); // Utilisez la méthode appropriée pour les enseignants
 
-            var listView = new ListView { ItemsSource = enseignants };
+            var listView = new ListView
+            {
+                ItemsSource = enseignants,
+                ItemTemplate = new DataTemplate(() =>
+                {
+                    var nomLabel = new Label();
+                    nomLabel.SetBinding(Label.TextProperty, "Nom");
+
+                    var prenomLabel = new Label();
+                    prenomLabel.SetBinding(Label.TextProperty, "Prenom");
+
+                    return new ViewCell
+                    {
+                        View = new StackLayout
+                        {
+                            Orientation = StackOrientation.Horizontal,
+                            Children = { nomLabel, prenomLabel }
+                        }
+                    };
+                })
+            };
 
             var retourButton = new Button { Text = "Retour" };
             retourButton.Clicked += (s, args) => DisplayEnseignantsMenu(null, null);
@@ -213,9 +243,6 @@ namespace MauiApplication
                 Children = { listView, retourButton }
             };
         }
-
-
-
 
         private void DisplaySallesMenu(object sender, EventArgs e)
         {
@@ -238,13 +265,19 @@ namespace MauiApplication
 
         private void AjouterSalle()
         {
-            var numeroEntry = new Entry { Placeholder = "Numéro de la salle" };
+            var numeroSalleEntry = new Entry { Placeholder = "Numéro de la salle" };
 
             var saveButton = new Button { Text = "Enregistrer" };
-            saveButton.Clicked += (s, args) =>
+            saveButton.Clicked += async (s, args) =>
             {
-                DisplayAlert("Succès", $"Salle {numeroEntry.Text} ajoutée avec succès", "OK");
-                DisplaySallesMenu(null, null);
+                var salle = new Salle
+                {
+                    NumeroSalle = numeroSalleEntry.Text
+                };
+
+                await _databaseService.AjouterSalle(salle); // Méthode correcte pour les salles
+                await DisplayAlert("Succès", "Salle ajoutée avec succès", "OK");
+                DisplaySallesMenu(null, null); // Retour au menu Salles
             };
 
             var retourButton = new Button { Text = "Retour" };
@@ -253,16 +286,32 @@ namespace MauiApplication
             Content = new StackLayout
             {
                 Padding = 20,
-                Children = { numeroEntry, saveButton, retourButton }
+                Children = { numeroSalleEntry, saveButton, retourButton }
             };
         }
 
-
-        private void ListeSalles()
+        private async void ListeSalles()
         {
-            var salles = new List<string> { "Salle 101", "Salle 102", "Salle 103" }; // Exemple de liste statique
+            var salles = await _databaseService.ObtenirSalles(); // Méthode correcte pour récupérer les salles
 
-            var listView = new ListView { ItemsSource = salles };
+            var listView = new ListView
+            {
+                ItemsSource = salles,
+                ItemTemplate = new DataTemplate(() =>
+                {
+                    var numeroSalleLabel = new Label();
+                    numeroSalleLabel.SetBinding(Label.TextProperty, "NumeroSalle");
+
+                    return new ViewCell
+                    {
+                        View = new StackLayout
+                        {
+                            Orientation = StackOrientation.Horizontal,
+                            Children = { numeroSalleLabel }
+                        }
+                    };
+                })
+            };
 
             var retourButton = new Button { Text = "Retour" };
             retourButton.Clicked += (s, args) => DisplaySallesMenu(null, null);
@@ -273,7 +322,6 @@ namespace MauiApplication
                 Children = { listView, retourButton }
             };
         }
-
 
 
         private void DisplayCoursMenu(object sender, EventArgs e)
@@ -304,10 +352,20 @@ namespace MauiApplication
             var prixEntry = new Entry { Placeholder = "Prix", Keyboard = Keyboard.Numeric };
 
             var saveButton = new Button { Text = "Enregistrer" };
-            saveButton.Clicked += (s, args) =>
+            saveButton.Clicked += async (s, args) =>
             {
-                DisplayAlert("Succès", $"Cours {nomEntry.Text} ajouté avec succès", "OK");
-                DisplayCoursMenu(null, null);
+                var cours = new Cours
+                {
+                    Nom = nomEntry.Text,
+                    Horaires = horairesEntry.Text,
+                    Salle = salleEntry.Text,
+                    Enseignants = enseignantsEntry.Text,
+                    Prix = decimal.TryParse(prixEntry.Text, out var prix) ? prix : 0
+                };
+
+                await _databaseService.AjouterCours(cours); // Méthode correcte pour les cours
+                await DisplayAlert("Succès", "Cours ajouté avec succès", "OK");
+                DisplayCoursMenu(null, null); // Retour au menu Cours
             };
 
             var retourButton = new Button { Text = "Retour" };
@@ -319,13 +377,31 @@ namespace MauiApplication
                 Children = { nomEntry, horairesEntry, salleEntry, enseignantsEntry, prixEntry, saveButton, retourButton }
             };
         }
-
-
-        private void ListeCours()
+        private async void ListeCours()
         {
-            var cours = new List<string> { "Mathématiques - 8h-10h - Salle 101", "Physique - 10h-12h - Salle 102" }; // Exemple de liste statique
+            var cours = await _databaseService.ObtenirCours(); // Méthode correcte pour récupérer les cours
 
-            var listView = new ListView { ItemsSource = cours };
+            var listView = new ListView
+            {
+                ItemsSource = cours,
+                ItemTemplate = new DataTemplate(() =>
+                {
+                    var nomLabel = new Label();
+                    nomLabel.SetBinding(Label.TextProperty, "Nom");
+
+                    var horairesLabel = new Label();
+                    horairesLabel.SetBinding(Label.TextProperty, "Horaires");
+
+                    return new ViewCell
+                    {
+                        View = new StackLayout
+                        {
+                            Orientation = StackOrientation.Horizontal,
+                            Children = { nomLabel, horairesLabel }
+                        }
+                    };
+                })
+            };
 
             var retourButton = new Button { Text = "Retour" };
             retourButton.Clicked += (s, args) => DisplayCoursMenu(null, null);
@@ -336,9 +412,5 @@ namespace MauiApplication
                 Children = { listView, retourButton }
             };
         }
-
-
     }
-
-
 }

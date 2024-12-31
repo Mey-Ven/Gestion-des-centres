@@ -44,6 +44,67 @@ namespace MauiApplication
         {
             return _database.UpdateAsync(etudiant);
         }
-        
+
+        public Task<int> AjouterProfesseur(Professeur professeur)
+        {
+            return _database.InsertAsync(professeur);
+        }
+
+        public Task<List<Professeur>> ObtenirProfesseurs()
+        {
+            return _database.Table<Professeur>().ToListAsync();
+        }
+
+        public Task<int> SupprimerProfesseur(int id)
+        {
+            return _database.DeleteAsync<Professeur>(id);
+        }
+
+        public Task<int> ModifierProfesseur(Professeur professeur)
+        {
+            return _database.UpdateAsync(professeur);
+        }
+
+        public Task<int> AjouterSalle(Salle salle)
+        {
+            return _database.InsertAsync(salle);
+        }
+
+        public Task<List<Salle>> ObtenirSalles()
+        {
+            return _database.Table<Salle>().ToListAsync();
+        }
+
+        public Task<int> SupprimerSalle(int id)
+        {
+            return _database.DeleteAsync<Salle>(id);
+        }
+
+        public Task<int> ModifierSalle(Salle salle)
+        {
+            return _database.UpdateAsync(salle);
+        }
+
+        public Task<int> AjouterCours(Cours cours)
+        {
+            return _database.InsertAsync(cours);
+        }
+
+        public Task<List<Cours>> ObtenirCours()
+        {
+            return _database.Table<Cours>().ToListAsync();
+        }
+
+        public Task<int> SupprimerCours(int id)
+        {
+            return _database.DeleteAsync<Cours>(id);
+        }
+
+        public Task<int> ModifierCours(Cours cours)
+        {
+            return _database.UpdateAsync(cours);
+        }
+
+
     }
 }
