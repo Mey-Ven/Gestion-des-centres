@@ -4,5 +4,11 @@
              x:Class="MauiApplication.App">
     <!-- Ressources globales (vide pour l'instant) -->
     <Application.Resources>
+        <ResourceDictionary>
+            <Style TargetType="StackLayout">
+                <Setter Property="Spacing" Value="10"/>
+                <Setter Property="Padding" Value="20"/> 
+            </Style>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>
