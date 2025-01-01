@@ -1,15 +1,13 @@
-﻿namespace MauiApplication
+﻿using Microsoft.Maui.Controls;
+
+namespace MauiApplication
 {
     public partial class App : Application
     {
         public App()
         {
-            InitializeComponent();
-        }
-
-        protected override Window CreateWindow(IActivationState? activationState)
-        {
-            return new Window(new AppShell());
+            InitializeComponent(); // Charge les ressources définies dans App.xaml
+            MainPage = new MainPage(); // Définit la page principale
         }
     }
 }

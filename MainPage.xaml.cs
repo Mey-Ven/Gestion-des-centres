@@ -656,19 +656,34 @@ namespace MauiApplication
         }
         private async void AjouterCours()
         {
+            var titreLabel = new Label
+            {
+                Text = "Ajouter un cours",
+                FontAttributes = FontAttributes.Bold,
+                FontSize = 28,
+                TextColor = Colors.DarkSlateGray,
+                HorizontalTextAlignment = TextAlignment.Center,
+                Margin = new Thickness(0, 10, 0, 20)
+            };
+
+            // Champs modernes avec styles globaux
             var nomEntry = new Entry { Placeholder = "Nom du cours" };
             var horairesEntry = new Entry { Placeholder = "Horaires du cours" };
-            var prixEntry = new Entry { Placeholder = "Prix", Keyboard = Keyboard.Numeric };
+            var prixEntry = new Entry { Placeholder = "Prix du cours", Keyboard = Keyboard.Numeric };
 
-            // Récupérer les salles disponibles
-            var sallesDisponibles = await _databaseService.ObtenirSalles(); // Méthode pour récupérer les salles
+            // Picker avec style global
+            var sallesDisponibles = await _databaseService.ObtenirSalles();
             var sallePicker = new Picker { Title = "Sélectionnez une salle" };
             foreach (var salle in sallesDisponibles)
             {
-                sallePicker.Items.Add(salle.NumeroSalle); // Ajouter les numéros des salles dans le picker
+                sallePicker.Items.Add(salle.NumeroSalle);
             }
 
-            var saveButton = new Button { Text = "Enregistrer" };
+            var saveButton = new Button
+            {
+                Text = "Enregistrer",
+                BackgroundColor = Colors.MediumSeaGreen
+            };
             saveButton.Clicked += async (s, args) =>
             {
                 if (sallePicker.SelectedIndex == -1)
@@ -681,31 +696,45 @@ namespace MauiApplication
                 {
                     Nom = nomEntry.Text,
                     Horaires = horairesEntry.Text,
-                    Salle = sallePicker.SelectedItem.ToString(), // Associe le numéro de salle choisi
+                    Salle = sallePicker.SelectedItem.ToString(),
                     Prix = decimal.TryParse(prixEntry.Text, out var prix) ? prix : 0
                 };
 
-                await _databaseService.AjouterCours(cours); // Enregistrer le cours dans la base
+                await _databaseService.AjouterCours(cours);
                 await DisplayAlert("Succès", "Cours ajouté avec succès", "OK");
-                DisplayCoursMenu(null, null); // Retour au menu des cours
+                DisplayCoursMenu(null, null);
             };
 
-            var retourButton = new Button { Text = "Retour" };
+            var retourButton = new Button
+            {
+                Text = "Retour",
+                BackgroundColor = Colors.IndianRed
+            };
             retourButton.Clicked += (s, args) => DisplayCoursMenu(null, null);
 
-            Content = new StackLayout
+            // Organisation de la page avec un style épuré
+            Content = new ScrollView
             {
-                Padding = 20,
-                Children = {
-            nomEntry,
-            horairesEntry,
-            sallePicker,
-            prixEntry,
-            saveButton,
-            retourButton
-        }
+                Content = new StackLayout
+                {
+                    Padding = 30,
+                    BackgroundColor = Colors.WhiteSmoke,
+                    Children = {
+                titreLabel,
+                new Frame
+                {
+                    Content = new StackLayout
+                    {
+                        Spacing = 10,
+                        Children = { nomEntry, horairesEntry, sallePicker, prixEntry, saveButton }
+                    }
+                },
+                retourButton
+            }
+                }
             };
         }
+
 
         private async Task ModifierCours(Cours cours)
         {
